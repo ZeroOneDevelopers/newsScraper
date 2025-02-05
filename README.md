@@ -66,5 +66,3 @@ Feel free to **fork** this project and submit pull requests. Contributions are w
 
 ## 📝 License
 This project is open-source and available under the **MIT License**.
-
-GAYYYYY
