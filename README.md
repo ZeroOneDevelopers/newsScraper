@@ -28,7 +28,7 @@ pip install -r requirements.txt
 ## 🔥 How to Run
 Run the Streamlit dashboard with:
 ```sh
-streamlit run main.py
+streamlit run newsscraperV2.py
 ```
 
 ## 📊 Usage
@@ -41,7 +41,7 @@ streamlit run main.py
 ## 🏗️ Project Structure
 ```
 📂 your-repo-name/
- ├── 📄 main.py             # Main script with scraping, sentiment analysis & SEO features
+ ├── 📄 newsscraperV2.py             # Main script with scraping, sentiment analysis & SEO features
  ├── 📄 requirements.txt   # Required dependencies
  ├── 📄 README.md          # Documentation (this file)
 ```

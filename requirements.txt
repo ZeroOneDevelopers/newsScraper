@@ -1,0 +1,7 @@
+requests
+beautifulsoup4
+pandas
+streamlit
+textblob
+textstat
+nltk
