@@ -10,7 +10,7 @@ from urllib.parse import urljoin, urlparse
 import nltk
 
 # ----------------------------
-# Ρύθμιση NLTK για stopwords
+# Setting up NLTK for stopwords
 # ----------------------------
 try:
     from nltk.corpus import stopwords
@@ -21,13 +21,13 @@ except LookupError:
     english_stopwords = set(stopwords.words('english'))
 
 # ----------------------------
-# Ρύθμιση Logging
+# Logging setup
 # ----------------------------
 logging.basicConfig(level=logging.INFO, 
                     format='%(asctime)s - %(levelname)s - %(message)s')
 
 # ----------------------------
-# Ρυθμίσεις Site & Κατηγοριών
+# Site & Category Settings
 # ----------------------------
 sites = [
     {
@@ -41,23 +41,23 @@ sites = [
 ]
 
 # ----------------------------
-# Συνάρτηση Καθαρισμού URL
+# URL Cleaning Function
 # ----------------------------
 def clean_url(base_url: str, link: str) -> str:
     """
-    Συνδυάζει το base_url με ένα σχετικό link χρησιμοποιώντας το urljoin.
+    Combines the base_url with a relative link using urljoin.
     """
     if not link:
         return None
     return link if link.startswith("http") else urljoin(base_url, link)
 
 # ----------------------------
-# Συνάρτηση Scraping Άρθρων
+# Article Scraping Function
 # ----------------------------
 def scrape_articles(url: str, title_selector: str, link_selector: str, base_url: str = "") -> list:
     """
-    Αντλεί τίτλους και URL άρθρων από τη σελίδα που δίνεται, χρησιμοποιώντας τους αντίστοιχους CSS selectors.
-    Επιστρέφει μια λίστα με tuples (title, link).
+    Fetches titles and article URLs from the given page using the corresponding CSS selectors.
+    Returns a list of tuples (title, link).
     """
     headers = {"User-Agent": "Mozilla/5.0"}
     try:
@@ -65,13 +65,13 @@ def scrape_articles(url: str, title_selector: str, link_selector: str, base_url:
         response.raise_for_status()
         soup = BeautifulSoup(response.text, 'html.parser')
 
-        # Ανάκτηση τίτλων
+        # Fetching titles
         titles = [elem.get_text(strip=True) for elem in soup.select(title_selector)][:10]
 
-        # Ανάκτηση links
+        # Fetching  links
         links = [clean_url(base_url, elem.get('href')) for elem in soup.select(link_selector)][:10]
 
-        # Εξασφαλίζουμε ότι ο αριθμός των links είναι ίδιος με των τίτλων
+        # Ensure the number of links matches the number of titles
         if len(links) < len(titles):
             links.extend([None] * (len(titles) - len(links)))
 
@@ -84,13 +84,13 @@ def scrape_articles(url: str, title_selector: str, link_selector: str, base_url:
         return []
 
 # ----------------------------
-# Συνάρτηση Λήψης Περιεχομένου και SEO Data
+# Function to Fetch Article Content and SEO Data
 # ----------------------------
 def fetch_article_content(url: str) -> tuple:
     """
-    Αντλεί το περιεχόμενο του άρθρου και τα SEO στοιχεία (meta title, meta description, meta keywords)
-    από το δοσμένο URL.
-    Επιστρέφει tuple: (content, meta_title, meta_description, meta_keywords)
+    Fetches the article content and SEO elements (meta title, meta description, meta keywords)
+    from the given URL.
+    Returns a tuple: (content, meta_title, meta_description, meta_keywords)
     """
     if not url:
         return "No URL provided.", None, None, None
@@ -101,7 +101,7 @@ def fetch_article_content(url: str) -> tuple:
         response.raise_for_status()
         soup = BeautifulSoup(response.text, 'html.parser')
 
-        # Προσπάθεια εξαγωγής του περιεχομένου από το <article> tag, εάν υπάρχει
+        # Attempt to extract content from the <article> tag, if it exists
         article_tag = soup.find('article')
         if article_tag:
             paragraphs = article_tag.find_all('p')
@@ -112,7 +112,7 @@ def fetch_article_content(url: str) -> tuple:
         if not content:
             content = "No relevant content found."
 
-        # Εξαγωγή SEO στοιχείων
+        # Extracting SEO elements
         meta_title_tag = soup.find("title")
         meta_title = meta_title_tag.get_text(strip=True) if meta_title_tag else "No Title"
         meta_desc_tag = soup.find("meta", attrs={"name": "description"})
@@ -130,12 +130,12 @@ def fetch_article_content(url: str) -> tuple:
         return f"Error fetching content: {e}", None, None, None
 
 # ----------------------------
-# Συνάρτηση Ανάλυσης Συναισθήματος
+# Sentiment Analysis Function
 # ----------------------------
 def analyze_sentiment(text: str) -> float:
     """
-    Αναλύει το συναίσθημα του κειμένου χρησιμοποιώντας το TextBlob.
-    Επιστρέφει την polarity ως float με στρογγυλοποίηση σε 3 δεκαδικά.
+    Analyzes the sentiment of the text using TextBlob.
+    Returns polarity as a float rounded to 3 decimals.
     """
     if not text or text.startswith("Error"):
         return 0.0
@@ -143,13 +143,13 @@ def analyze_sentiment(text: str) -> float:
     return round(blob.sentiment.polarity, 3)
 
 # ----------------------------
-# Συνάρτηση Ανάλυσης SEO
+# SEO Analysis Function
 # ----------------------------
 def analyze_seo(text: str) -> tuple:
     """
-    Υπολογίζει την πυκνότητα λέξεων (keyword density) αφαιρώντας τα κοινά stopwords,
-    και υπολογίζει τις μετρικές αναγνωσιμότητας (Flesch Reading Ease και Flesch-Kincaid Grade).
-    Επιστρέφει tuple: (keyword_density, readability_scores)
+    Calculates keyword density by removing common stopwords,
+    and computes readability metrics (Flesch Reading Ease and Flesch-Kincaid Grade).
+    Returns a tuple: (keyword_density, readability_scores)
     """
     if not text:
         return {}, {"flesch_reading_ease": "N/A", "flesch_kincaid_grade": "N/A"}
@@ -159,9 +159,9 @@ def analyze_seo(text: str) -> tuple:
     if word_count == 0:
         return {}, {"flesch_reading_ease": "N/A", "flesch_kincaid_grade": "N/A"}
 
-    # Καθαρισμός λέξεων (αφαίρεση σημείων στίξης και μετατροπή σε lowercase)
+    # Clean words (remove punctuation and convert to lowercase)
     cleaned_words = [word.strip(".,!?;:()[]\"'").lower() for word in words]
-    # Αφαίρεση stopwords
+    # Remove stopwords
     filtered_words = [word for word in cleaned_words if word and word not in english_stopwords]
     
     word_freq = Counter(filtered_words)
@@ -176,35 +176,35 @@ def analyze_seo(text: str) -> tuple:
     return keyword_density, readability_scores
 
 # ----------------------------
-# Συνάρτηση Δημιουργίας DataFrame
+# DataFrame Creation Function
 # ----------------------------
 def build_dataframe(data: list) -> pd.DataFrame:
     """
-    Δημιουργεί ένα DataFrame της Pandas από τα συλλεγμένα δεδομένα.
+    Creates a Pandas DataFrame from the collected data.
     """
     return pd.DataFrame(data)
 
 # ----------------------------
-# Συνάρτηση Εξαγωγής σε CSV
+# Export to CSV Function
 # ----------------------------
 def download_csv(df: pd.DataFrame) -> bytes:
     """
-    Μετατρέπει το DataFrame σε CSV για εξαγωγή.
+    Converts the DataFrame to a CSV file for export.
     """
     return df.to_csv(index=False).encode('utf-8')
 
 # ----------------------------
-# Κύρια Συνάρτηση
+# Main Function
 # ----------------------------
 def main():
-    # Ρυθμίσεις Streamlit
+    # Streamlit settings
     st.set_page_config(page_title="ABC News SEO & Sentiment Dashboard", layout="wide")
     st.title("📊 ABC News SEO & Sentiment Dashboard")
 
     data = []
-    site = sites[0]  # Υποθέτουμε ότι έχουμε μόνο ένα site (ABC News)
+    site = sites[0]  # Assuming we have only one site (ABC News)
 
-    # Ορισμός CSS selectors για κάθε κατηγορία
+    # Define CSS selectors for each category
     selectors = {
         "Politics": {
             "title": "h2 a.AnchorLink",
@@ -220,14 +220,14 @@ def main():
         }
     }
 
-    # Sidebar φίλτρα: επιλογή κατηγορίας και αναζήτηση λέξεων-κλειδιών
+    # Sidebar filters: select category and search keywords
     st.sidebar.header("Filters")
     category_filter = st.sidebar.selectbox("Select Category", ["All"] + list(site["categories"].keys()))
     keyword_search = st.sidebar.text_input("Search Keyword in Title", "")
 
-    # Εκτέλεση scraping και συλλογή δεδομένων για κάθε κατηγορία
+    # Scraping and collecting data for each category
     for category, url in site["categories"].items():
-        # Χρήση του urlparse για ασφαλή εξαγωγή του base URL
+        # Use urlparse for safely extracting the base URL
         parsed_url = urlparse(url)
         base_url = f"{parsed_url.scheme}://{parsed_url.netloc}"
         
@@ -247,13 +247,13 @@ def main():
                 "Keyword Density": keyword_density,
                 "Flesch Reading Ease": readability_scores["flesch_reading_ease"],
                 "Flesch-Kincaid Grade": readability_scores["flesch_kincaid_grade"],
-                "Content": content[:500]  # Προεπισκόπηση περιεχομένου
+                "Content": content[:500]  # Content preview
             })
 
-    # Δημιουργία DataFrame
+    # Create DataFrame
     df = build_dataframe(data)
 
-    # Εφαρμογή φίλτρων βάσει κατηγορίας και αναζήτησης λέξεων-κλειδιών
+    # Apply filters based on category and keyword search
     if category_filter != "All":
         df = df[df["Category"] == category_filter]
     if keyword_search:
@@ -262,14 +262,14 @@ def main():
     st.subheader(f"News Articles ({len(df)})")
     st.dataframe(df[["Category", "Title", "Sentiment", "Flesch Reading Ease", "Flesch-Kincaid Grade", "URL"]])
 
-    # Γράφημα κατανομής του Sentiment
+    # Sentiment Distribution Chart
     st.subheader("📈 Sentiment Distribution")
     if not df.empty:
         st.bar_chart(df["Sentiment"])
     else:
         st.write("No data available for the selected filters.")
 
-    # Λεπτομέρειες SEO Analysis για κάθε άρθρο
+    # SEO Analysis Details for each article
     st.subheader("🔍 SEO Analysis Details")
     for index, row in df.iterrows():
         st.markdown(f"### {row['Title']}")
@@ -286,7 +286,7 @@ def main():
             st.markdown(f"[Read more]({row['URL']})")
         st.write("---")
 
-    # Δυνατότητα εξαγωγής των δεδομένων σε CSV
+    # Option to export data to CSV
     st.subheader("Download Data")
     csv_data = download_csv(df)
     st.download_button(
@@ -297,7 +297,7 @@ def main():
     )
 
 # ----------------------------
-# Εκτέλεση κώδικα όταν τρέχει ως κύριο πρόγραμμα
+# Execution when running as the main program
 # ----------------------------
 if __name__ == '__main__':
     main()
